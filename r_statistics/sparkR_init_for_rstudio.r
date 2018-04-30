@@ -14,10 +14,12 @@ sparkR.session(master = "local[*]", sparkConfig = list(spark.driver.memory = "2g
 
 #create item_properties.csv schema [mainly to reaf timestamp as string]
 item_prop_schema <- structType(structField("timestamp","string"),structField("itemid","integer"),structField("property","string"),structField("value","string"))
+cats_ancestors_schema <- structType(structField("categoryid","integer"),structField("ancestorid","integer"))
 
 #read properties csvs
 item_properties <- read.df("/media/myrto/Files/Documents/Master/DI UOA/BigData/project/Retailrocket_recom_sys_dataset/item_properties_part1.csv",source="csv",header="true",schema = item_prop_schema)
 item_properties_2 <- read.df("/media/myrto/Files/Documents/Master/DI UOA/BigData/project/Retailrocket_recom_sys_dataset/item_properties_part2.csv",source="csv",header="true",schema = item_prop_schema)
+cats_ancestors_df <- read.df("/media/myrto/Files/Documents/Master/DI UOA/BigData/project/exported_csv/ancestor_per_catid.csv",source="csv",header="true",schema = cats_ancestors_schema)
 
 #union the 2 dataframes
 item_properties = union(item_properties,item_properties_2)
@@ -57,7 +59,10 @@ createOrReplaceTempView(items_in_events_categories,"used_items_cats")
 createOrReplaceTempView(parent_categories,"parents_table")
 parent_items <- sql("SELECT itemid,value FROM used_items_cats WHERE value IN(SELECT * FROM parents_table)")
 
+createOrReplaceTempView(cats_ancestors_df, "categories_with_ancestors")
 
-#get distinct items
-used_items_categories <- sql("SELECT distinct(e.itemid), p.value FROM events e, item_cats_from_properties p WHERE e.itemid=p.itemid AND p.property LIKE 'categoryid'")
+#get items and their general categories per time
+used_items_categories <- sql("SELECT e.itemid, e.timestamp, c.ancestorid FROM events e, item_cats_from_properties p, categories_with_ancestors c WHERE e.itemid=p.itemid AND p.property LIKE 'categoryid' AND p.value=c.categoryid")
 
+#get weighted property values per item per event
+props_per_event <- sql("SELECT e.timestamp, e.itemid, e.visitorid, i.property, max( ( 86400000/(e.timestamp-i.timestamp)) ) as weight FROM events_table e, properties_table i WHERE e.itemid=i.itemid AND i.property NOT IN('categoryid','available') AND i.timestamp < e.timestamp GROUP BY e.timestamp, e.itemid, e.visitorid, i.property")
