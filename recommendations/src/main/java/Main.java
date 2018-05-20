@@ -1,4 +1,3 @@
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
@@ -11,20 +10,25 @@ public class Main {
                 .appName("recommendations")
                 .getOrCreate();
 
-        Dataset events = spark.read().option("header", "true").csv("/home/konstantina/Documents/big_data/retailrocket-recommender-system-dataset/events.csv");
 
-        events.show();
+        String events_csv = "/home/konstantina/Documents/big_data/retailrocket-recommender-system-dataset/events.csv";
+        String category_tree_csv = "/home/konstantina/Documents/big_data/retailrocket-recommender-system-dataset/category_tree.csv";
+
+        Dataset events = spark.read().option("header", "true").csv(events_csv);
+        Dataset category_tree = spark.read().option("header", "true").csv(category_tree_csv);
+
         events.createTempView("Events");
-        //spark.sql("Select count(*) As Views From Events").show();
 
-        //JavaRDD<String> rdd = data.toJavaRDD();
+        Statistics stats = new Statistics(spark, events, category_tree);
+        //stats.countActions();
+        //stats.categoriesByParent();
+        //stats.findRootCategories();
 
-        //rdd.map(r -> r.split(" "));
-
-        //events.createTempView("Kwnna");
-
-        //spark.sql("select distinct count('categoryid') from Kwnna");
-
-
+        ALS_Recommendation als = new ALS_Recommendation(spark, events);
+        //als.createVisitorItemRatings();
+        //als.printVisitorItemRatings();
+        //als.createRatingsFile();
+        //als.ALS();
+        //als.saveAndLoadModel();
     }
 }
