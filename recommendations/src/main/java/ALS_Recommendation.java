@@ -16,6 +16,7 @@ public class ALS_Recommendation {
     SparkSession spark;
     Dataset events;
 
+    /*JavaPairRDD<Tuple2<String, String>, Double> visitor_item_ratings;*/
     JavaPairRDD<Tuple2<String, String>, Double> visitor_item_ratings;
     JavaRDD<Rating> ratings;
 
@@ -33,20 +34,37 @@ public class ALS_Recommendation {
         //Dataset<Row> dataset = spark.createDataFrame(rdd, schema);
 
 
-        JavaPairRDD<Tuple2<String, String>, Double> visitor_item_ratings = rdd.map(line -> line.toString().split(",")).mapToPair(line -> {
+        /*JavaPairRDD<Tuple2<String, String>, Double> visitor_item_ratings = rdd.map(line -> line.toString().split(",")).mapToPair(line -> {
             Tuple2<String, String> tuple = new Tuple2<>(line[1], line[3]);
             //JavaPairRDD key = new JavaPairRDD<String, String>(tuple);
             if (line[2].equals("view")) {
-                return new Tuple2<Tuple2<String, String>, Double>(tuple, 0.3);
-            } else if (line[2].equals("view")) {
-                return new Tuple2<Tuple2<String, String>, Double>(tuple, 0.7);
+                return new Tuple2<Tuple2<String, String>, Double>(tuple, 3.0);
+            } else if (line[2].equals("addtocart")) {
+                return new Tuple2<Tuple2<String, String>, Double>(tuple, 7.0);
             } else {
-                return new Tuple2<Tuple2<String, String>, Double>(tuple, 1.0);
+                return new Tuple2<Tuple2<String, String>, Double>(tuple, 10.0);
             }
-        })
-                .reduceByKey((a, b) -> a + b);
+        })*/
+                /*.reduceByKey((a, b) -> a + b)*/;
 
-        this.visitor_item_ratings = visitor_item_ratings;
+        JavaPairRDD<Tuple2<String, String>, Integer> visitor_item_ratings = rdd.map(line -> line.toString().split(",")).mapToPair(line -> {
+            Tuple2<String, String> tuple = new Tuple2<>(line[1], line[3]);
+            //JavaPairRDD key = new JavaPairRDD<String, String>(tuple);
+            if (line[2].equals("view")) {
+                return new Tuple2<Tuple2<String, String>, Integer>(tuple, 3);
+            } else if (line[2].equals("addtocart")) {
+                return new Tuple2<Tuple2<String, String>, Integer>(tuple, 7);
+            } else {
+                return new Tuple2<Tuple2<String, String>, Integer>(tuple, 10);
+            }
+        });
+
+        JavaPairRDD<Tuple2<String, String>, Double> visitor_item_avgs = visitor_item_ratings
+                .mapValues(a -> new Tuple2<>(a, 1))
+                .reduceByKey( (a,b) ->  new Tuple2<>(a._1+b._1,a._2+b._2))
+                .mapValues( a -> ((double)a._1/a._2) );
+
+        this.visitor_item_ratings = visitor_item_avgs;
     }
 
     void printVisitorItemRatings() {

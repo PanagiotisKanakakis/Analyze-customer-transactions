@@ -11,24 +11,24 @@ public class Main {
                 .getOrCreate();
 
 
-        String events_csv = "/home/konstantina/Documents/big_data/retailrocket-recommender-system-dataset/events.csv";
-        String category_tree_csv = "/home/konstantina/Documents/big_data/retailrocket-recommender-system-dataset/category_tree.csv";
+        String events_csv = "/home/myrto/Documents/bigData/datasets/events.csv";
+        String category_tree_csv = "/home/myrto/Documents/bigData/datasets/category_tree.csv";
 
         Dataset events = spark.read().option("header", "true").csv(events_csv);
         Dataset category_tree = spark.read().option("header", "true").csv(category_tree_csv);
 
         events.createTempView("Events");
 
-        Statistics stats = new Statistics(spark, events, category_tree);
+        //Statistics stats = new Statistics(spark, events, category_tree);
         //stats.countActions();
         //stats.categoriesByParent();
         //stats.findRootCategories();
 
         ALS_Recommendation als = new ALS_Recommendation(spark, events);
-        //als.createVisitorItemRatings();
-        //als.printVisitorItemRatings();
-        //als.createRatingsFile();
-        //als.ALS();
-        //als.saveAndLoadModel();
+        als.createVisitorItemRatings();
+        als.printVisitorItemRatings();
+        als.createRatingsFile();
+        als.ALS();
+        als.saveAndLoadModel();
     }
 }

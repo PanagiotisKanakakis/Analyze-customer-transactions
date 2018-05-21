@@ -76,7 +76,7 @@ public class Statistics {
         //parentCategories.show();
 
         Dataset rootCategories = this.category_tree.select("categoryid").where("parentid is null").distinct();
-        rootCategories.coalesce(1).write().mode(SaveMode.Overwrite).option("header", "true").csv("/home/konstantina/Documents/rootCategories.csv");
+        rootCategories.coalesce(1).write().mode(SaveMode.Overwrite).option("header", "true").csv("/home/myrto/Documents/bigData/Analyze-customer-transactions/exported_csv/rootCategories.csv");
         rootCategories.show();
         long rootCategoriesNum = rootCategories.count();
         System.out.println("Number of categories without parent = "+rootCategoriesNum);
