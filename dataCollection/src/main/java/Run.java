@@ -1,6 +1,5 @@
-import org.apache.kafka.clients.producer.Producer;
+import consumer.EventConsumer;
 import producer.CsvProducer;
-import producer.DBProducer;
 
 import java.io.IOException;
 
@@ -9,7 +8,7 @@ import java.io.IOException;
  */
 public class Run {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 1) {
             throw new IllegalArgumentException("Must have either 'producer' or 'consumer' as argument");
         }
@@ -19,7 +18,7 @@ public class Run {
 //                    DBProducer.main(args);
                 break;
             case "consumer":
-//                    Consumer.main(args);
+                EventConsumer.runConsumer();
                 break;
             default:
                 throw new IllegalArgumentException("Don't know how to do " + args[0]);

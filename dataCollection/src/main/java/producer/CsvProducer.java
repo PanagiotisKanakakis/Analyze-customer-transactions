@@ -4,18 +4,18 @@ import org.apache.kafka.clients.producer.*;
 
 import com.google.common.io.Resources;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by panagiotis on 10/4/2018.
  */
 public class CsvProducer {
 
-    private final static String TOPIC = "customer-transactions";
+    private final static String EVENT_TOPIC = "events";
 
     public static Producer createProducer() throws IOException {
 
@@ -26,42 +26,43 @@ public class CsvProducer {
         }
     }
 
-    public static void runProducer(final int sendMessageCount) throws InterruptedException, IOException {
+    public static void runProducer() throws InterruptedException, IOException {
 
-        final Producer<Long, String> producer = createProducer();
+        final Producer<String, String> producer = createProducer();
 
 
         // open csv
+        URL url = new URL("http://195.134.66.230:8080/dataset/category_tree.csv");
+        URLConnection connection = url.openConnection();
 
-
-
-
-        /*long time = System.currentTimeMillis();
-        final CountDownLatch countDownLatch = new CountDownLatch(sendMessageCount);
+        InputStreamReader input = new InputStreamReader(connection.getInputStream());
+        BufferedReader buffer = null;
+        String line = "";
+        String csvSplitBy = ",";
 
         try {
-
-            for (long index = time; index < time + sendMessageCount; index++) {
-                final ProducerRecord<Long, String> record =
-                        new ProducerRecord<>(TOPIC, index, "Hello Mom " + index);
+            buffer = new BufferedReader(input);
+            while ((line = buffer.readLine()) != null) {
+                System.out.println(line);
+                final ProducerRecord<String, String> record =
+                        new ProducerRecord<>(EVENT_TOPIC,line);
                 producer.send(record, (metadata, exception) -> {
-                    long elapsedTime = System.currentTimeMillis() - time;
                     if (metadata != null) {
                         System.out.printf("sent record(key=%s value=%s) " +
-                                        "meta(partition=%d, offset=%d) time=%d\n",
+                                        "meta(partition=%d, offset=%d)\n",
                                 record.key(), record.value(), metadata.partition(),
-                                metadata.offset(), elapsedTime);
+                                metadata.offset());
                     } else {
                         exception.printStackTrace();
                     }
-                    countDownLatch.countDown();
                 });
             }
-            countDownLatch.await(25, TimeUnit.SECONDS);
+        } catch (IOException e) {
+            e.printStackTrace();
         }finally {
             producer.flush();
             producer.close();
-        }*/
+        }
     }
 
 
