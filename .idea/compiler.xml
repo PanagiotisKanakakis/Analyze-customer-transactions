@@ -6,11 +6,14 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="analyze-customer-transactions" />
+        <module name="dataCollection" />
+        <module name="recommendations" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="analyze-customer-transactions" target="1.8" />
+      <module name="dataCollection" target="1.8" />
+      <module name="recommendations" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
