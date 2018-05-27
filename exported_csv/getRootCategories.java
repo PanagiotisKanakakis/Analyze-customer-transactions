@@ -70,7 +70,7 @@ public static void getRootCategories(String[] args) throws AnalysisException {
     exported.show(5);
 
     //export to csv
-    //note a folder will be create at the given path, the .csv will be stored inside
+    //note a folder will be created at the given path, the .csv will be stored inside
     exported.coalesce(1).write().format("com.databricks.spark.csv").option("header","true").save("/media/myrto/Files/Documents/Master/DI UOA/BigData/project/gitFolder/exported_csv/ancestor_per_catid");
 
     //check the number of distinct ancestorids (there should be 25)

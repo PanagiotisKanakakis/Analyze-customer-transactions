@@ -13,8 +13,9 @@ sparkR.session(master = "local[*]", sparkConfig = list(spark.driver.memory = "2g
 ### read csvs after init ###
 
 #create item_properties.csv schema [mainly to reaf timestamp as string]
-item_prop_schema <- structType(structField("timestamp","string"),structField("itemid","integer"),structField("property","string"),structField("value","string"))
-cats_ancestors_schema <- structType(structField("categoryid","integer"),structField("ancestorid","integer"))
+item_prop_schema <- structType(structField("timestamp","string"),structField("itemid","string"),structField("property","string"),structField("value","string"))
+cats_ancestors_schema <- structType(structField("categoryid","string"),structField("ancestorid","string"))
+events_schema <- structType(structField("timestamp","string"),structField("visitorid","string"),structField("event","string"),structField("itemid","string"),structField("transactionid","integer"))
 
 #read properties csvs
 item_properties <- read.df("/media/myrto/Files/Documents/Master/DI UOA/BigData/project/Retailrocket_recom_sys_dataset/item_properties_part1.csv",source="csv",header="true",schema = item_prop_schema)
@@ -28,7 +29,7 @@ item_properties = union(item_properties,item_properties_2)
 item_props_with_ts <- withColumn(item_properties, "ts", from_unixtime(item_properties$timestamp/1000))
 
 #read events.csv
-events <- read.df("/media/myrto/Files/Documents/Master/DI UOA/BigData/project/Retailrocket_recom_sys_dataset/events.csv",source="csv",header="true",delimiter=",", na.strings="NA",schema = structType(structField("timestamp","string"),structField("visitorid","integer"),structField("event","string"),structField("itemid","integer"),structField("transactionid","integer")))
+events <- read.df("/media/myrto/Files/Documents/Master/DI UOA/BigData/project/Retailrocket_recom_sys_dataset/events.csv",source="csv",header="true",delimiter=",", na.strings="NA",schema = events_schema)
 events <- withColumn(events, "timestamp", from_unixtime(events$timestamp/1000))
 
 #read category_tree.csv
@@ -66,3 +67,31 @@ used_items_categories <- sql("SELECT e.itemid, e.timestamp, c.ancestorid FROM ev
 
 #get weighted property values per item per event
 props_per_event <- sql("SELECT e.timestamp, e.itemid, e.visitorid, i.property, max( ( 86400000/(e.timestamp-i.timestamp)) ) as weight FROM events_table e, properties_table i WHERE e.itemid=i.itemid AND i.property NOT IN('categoryid','available') AND i.timestamp < e.timestamp GROUP BY e.timestamp, e.itemid, e.visitorid, i.property")
+
+
+## NEW VISUALISATION user/item implicit ratings scatter plot ##
+## requires that item_properties, events and categor_ancestors have already been loaded and timestamp converted (optional) ##
+
+## new events schema that includes 'ratings' ##
+events_with_ratings_schema <- structType(structField("timestamp","string"),structField("visitorid","string"),structField("event","string"),structField("itemid","string"),structField("transactionid","integer"), structField("eventRating","double"))
+
+## lambda expression on events to create the new column according to event type [map-like function called dapply]
+events_with_ratings <- dapply(events, function(x) { x <- { a <- 0.0
+	if (x$event == "view") {
+		a = 0.3
+	} else if (x$event == "addtocart") {
+		a = 0.7
+	} else {
+		a = 1.0
+	}
+	cbind(x, a ) }
+	}, events_with_ratings_schema)
+
+createOrReplaceTempView(events_with_ratings, "events_with_ratings_table")
+
+
+## create a df with ratings, itemid, visitorid, category and ancstor of every event
+user_item_ratings_with_cats <- sql("SELECT e.visitorid, e.itemid, sum(e.eventRating), c.categoryid, c.ancestorid FROM events_with_ratings_table e, item_cats_from_properties p, categories_with_ancestors c WHERE e.itemid = p.itemid AND p.value LIKE c.categoryid GROUP BY e.visitorid, e.itemid, c.categoryid, c.ancestorid")
+
+# convert to r dataframe in order to plot
+user_item_ratings_with_cats <- collect(user_item_ratings_with_cats)
