@@ -1,3 +1,6 @@
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
@@ -9,7 +12,6 @@ public class Main {
                 .master("local[*]")
                 .appName("recommendations")
                 .getOrCreate();
-
 
         String events_csv = "/home/myrto/Documents/bigData/datasets/events.csv";
         String category_tree_csv = "/home/myrto/Documents/bigData/datasets/category_tree.csv";
